@@ -8,57 +8,59 @@
 #define ASCII_MAP "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|()1{}[]?-_+~<>i!lI;:,\"^`'. "
 #define ASCII_MAP_SIZE (sizeof(ASCII_MAP) -1)
 
+static const float CHAR_ASPECT_RATIO = 0.5f;
+static const float CONTRAST_CONST = 1.8f;
+static const float BRIGHTNESS_CONST = 0.0f;
+static const float MAX_WIDTH = 315.f;
+static const float MAX_HEIGHT = 200.f;
+static const float SCALE_FACTOR = (ASCII_MAP_SIZE - 1) / 255.0f;
+
 int main(int argc, char *argv[]) {
 	if (argc != 2) {
-		printf("Usage: %s image_file\n", argv[0]);
-		return 1;
+		fprintf(stderr, "Usage: %s image_file\n", argv[0]);
+		return EXIT_FAILURE;
 	}
-
 	char *restrict filename = argv[1];
-	float max_width = 316.f;
-	float max_height = 200.f;
 	int width, height, channels;
 
 	unsigned char *img = stbi_load(filename, &width, &height, &channels, 3);
 	if (!img) {
-		printf("Failed to load image: %s\n", filename);
-		return 1;
+		fprintf(stderr, "Failed to load image: %s\n", filename);
+		return EXIT_FAILURE;
 	}
-	float scale_x = max_width / width;
-	float scale_y = max_height / height;
+	float scale_x = MAX_WIDTH / width;
+	float scale_y = MAX_HEIGHT / height;
 	float scale = (scale_x < scale_y) ? scale_x : scale_y;
 
 	int new_width = width * scale;
-	float char_aspect = 0.5f;
-	int new_height = (int)(height * scale * char_aspect);
+	int new_height = (int)(height * scale * CHAR_ASPECT_RATIO);
 
 	unsigned char *restrict resized_img = malloc(new_width * new_height * 3);
 	if (resized_img == NULL) {
-		printf("Memory allocation of resize image failed\n");
-		return 1;
+		fprintf(stderr, "Memory allocation of resize image failed\n");
+		stbi_image_free(img);
+		return EXIT_FAILURE;
 	}
 	stbir_resize_uint8_srgb(img, width, height, 0, resized_img, new_width, new_height, 0, 3);
+	stbi_image_free(img);
 
 	char grayscale_to_ascii[256];
-	float scale_factor = (ASCII_MAP_SIZE - 1) / 255.0f;
 	for (int i = 0; i < 256; i++) {
-		grayscale_to_ascii[i] = ASCII_MAP[(int)((255 - i) * scale_factor)];
+		grayscale_to_ascii[i] = ASCII_MAP[(int)((255 - i) * SCALE_FACTOR)];
 	}
 
-	int total_size = new_width * new_height * 3;
-	float c = 1.8f;
-	float b = 0.0f;
+	const int total_size = new_width * new_height * 3;
 
 	size_t output_size = (new_width + 1) * new_height;
 	char *restrict output = malloc((new_width + 1) * new_height);
 	if (output == NULL) {
-		printf("Memory allocation for output buffer failed\n");
-		return 1;
+		fprintf(stderr, "Memory allocation for output buffer failed\n");
+		return EXIT_FAILURE;
 	}
 
 	for (int i = 0, j = 0, y = 0; i < total_size; i +=3, j++) {
 		float val = (0.2126f * resized_img[i] + 0.7152f * resized_img[i + 1] + 0.0722f * resized_img[i + 2]);
-		val = (val - 127.5f) * c + 127.5f + b;
+		val = (val - 127.5f) * CONTRAST_CONST + 127.5f + BRIGHTNESS_CONST;
 		const int pixel_value = (unsigned char) fminf(fmaxf(val, 0.0f), 255.0f);
 		output[y * (new_width + 1) + (j % new_width)] = grayscale_to_ascii[pixel_value];
 
@@ -71,5 +73,5 @@ int main(int argc, char *argv[]) {
 
 	free(resized_img);
 	free(output);
-	return 0;
+	return EXIT_SUCCESS;
 }
