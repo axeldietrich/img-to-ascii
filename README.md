@@ -9,4 +9,4 @@ Example:
 
 ![Alt text](https://freerangestock.com/sample/127616/zebra-on-black-background-.jpg)
 
-![img.png](https://i.postimg.cc/wTwXL74W/img.png)
+![img.png](https://i.postimg.cc/c6GL8MyK/img.png)
