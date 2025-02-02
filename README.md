@@ -1,6 +1,6 @@
 # img-to-ascii
 
-Simple CLI app to create ASCII representations of images.
+Simple CLI app to create ASCII representations of images.  
 Usage
 
 `./img-to-ascii /path/to/image -b brightness -c contrast -a character aspect ratio -w max width -h max height`
